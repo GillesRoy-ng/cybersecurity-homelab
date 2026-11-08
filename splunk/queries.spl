@@ -1,0 +1,24 @@
+# Requêtes SPL (Splunk) utilisées pour analyser les logs Suricata
+# Source : index ingéré depuis /var/log/suricata/fast.log (File monitor input)
+
+# --- 1. Vue d'ensemble des alertes Suricata ---
+index=suricata sourcetype=suricata:fastlog
+| stats count by signature, src_ip, dest_ip
+| sort -count
+
+# --- 2. Détection spécifique : alertes de scan de ports ---
+index=suricata sourcetype=suricata:fastlog "Nmap SYN Scan Detected"
+| table _time, src_ip, dest_ip, signature
+| sort -_time
+
+# --- 3. Top des adresses IP sources les plus bruyantes (potentiels attaquants) ---
+index=suricata sourcetype=suricata:fastlog
+| stats count by src_ip
+| sort -count
+| head 10
+
+# --- 4. Alerte planifiée : scan détecté dans les 5 dernières minutes ---
+# (Configurée comme "Scheduled Search" dans Splunk, exécutée toutes les 5 min,
+#  déclenche une alerte si count > 0 sur la fenêtre -5m à now)
+index=suricata sourcetype=suricata:fastlog "Nmap SYN Scan Detected" earliest=-5m
+| stats count

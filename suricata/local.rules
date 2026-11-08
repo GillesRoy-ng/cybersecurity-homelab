@@ -1,0 +1,16 @@
+# Règle de détection personnalisée — Suricata
+# Détecte un scan de ports de type SYN scan (ex. Nmap -sS)
+#
+# Logique :
+#   - flags:S          -> ne matche que les paquets avec le flag SYN (début de connexion TCP)
+#   - threshold:...    -> ne déclenche une alerte que si le seuil est dépassé,
+#                         pour éviter le bruit sur un trafic normal
+#       type both      -> applique une limite ET un compte minimum avant d'alerter
+#       track by_src   -> comptabilise par adresse IP source
+#       count 20       -> déclenche à partir de 20 paquets SYN
+#       seconds 1      -> ...dans une fenêtre de 1 seconde (signature d'un scan automatisé,
+#                         très différent du rythme d'une connexion humaine normale)
+#   - sid:1000001      -> identifiant unique de la règle (plage locale >= 1000000)
+#   - rev:1            -> numéro de révision de la règle
+
+alert tcp any any -> $HOME_NET any (msg:"Nmap SYN Scan Detected"; flags:S; threshold:type both, track by_src, count 20, seconds 1; sid:1000001; rev:1;)
